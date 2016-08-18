@@ -6,7 +6,7 @@ package, which itself is a work in progress.
 
 # BUILD
 
-go build
+	go build
 
 # USE
 
@@ -42,3 +42,4 @@ something like this:
 	│                   └── GlossSeeAlso
 	│               ├── GlossSee
 
+[p9p]: https://swtch.com/plan9port/
