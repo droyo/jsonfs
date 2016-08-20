@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"time"
 
 	"aqwari.net/net/styx/styxproto"
@@ -92,15 +93,28 @@ type dir struct {
 	done chan struct{}
 }
 
-func mkdir(m map[string]interface{}) *dir {
-	c := make(chan stat, len(m))
+func mkdir(val interface{}) *dir {
+	c := make(chan stat, 10)
 	done := make(chan struct{})
 	go func() {
-		for name, v := range m {
-			select {
-			case c <- stat{name: name, file: &fakefile{v: v}}:
-			case <-done:
-				break
+		if m, ok := val.(map[string]interface{}); ok {
+		LoopMap:
+			for name, v := range m {
+				select {
+				case c <- stat{name: name, file: &fakefile{v: v}}:
+				case <-done:
+					break LoopMap
+				}
+			}
+		} else if a, ok := val.([]interface{}); ok {
+		LoopArray:
+			for i, v := range a {
+				name := strconv.Itoa(i)
+				select {
+				case c <- stat{name: name, file: &fakefile{v: v}}:
+				case <-done:
+					break LoopArray
+				}
 			}
 		}
 		close(c)

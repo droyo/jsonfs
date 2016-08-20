@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	"aqwari.net/net/styx"
@@ -47,21 +48,32 @@ func main() {
 	log.Fatal(styxServer.ListenAndServe())
 }
 
-func walkTo(v interface{}, loc string) (map[string]interface{}, interface{}, bool) {
+func walkTo(v interface{}, loc string) (interface{}, interface{}, bool) {
 	cwd := v
 	parts := strings.FieldsFunc(loc, func(r rune) bool { return r == '/' })
-	var parent map[string]interface{}
+	var parent interface{}
 
 	for _, p := range parts {
-		m, ok := cwd.(map[string]interface{})
-		if !ok {
+		switch v := cwd.(type) {
+		case map[string]interface{}:
+			parent = v
+			if child, ok := v[p]; !ok {
+				return nil, nil, false
+			} else {
+				cwd = child
+			}
+		case []interface{}:
+			parent = v
+			i, err := strconv.Atoi(p)
+			if err != nil {
+				return nil, nil, false
+			}
+			if len(v) <= i {
+				return nil, nil, false
+			}
+			cwd = v[i]
+		default:
 			return nil, nil, false
-		}
-		parent = m
-		if child, ok := m[p]; !ok {
-			return nil, nil, false
-		} else {
-			cwd = child
 		}
 	}
 	return parent, cwd, true
@@ -79,6 +91,8 @@ func (srv *server) Serve9P(s *styx.Session) {
 			switch file.(type) {
 			case map[string]interface{}:
 				t.Rwalk(true, os.ModeDir)
+			case []interface{}:
+				t.Rwalk(true, os.ModeDir)
 			default:
 				t.Rwalk(true, 0)
 			}
@@ -86,7 +100,10 @@ func (srv *server) Serve9P(s *styx.Session) {
 			switch v := file.(type) {
 			case map[string]interface{}:
 				t.Ropen(mkdir(v), os.ModeDir)
+			case []interface{}:
+				t.Ropen(mkdir(v), os.ModeDir)
 			default:
+				log.Printf("%T not a directory", v)
 				t.Ropen(strings.NewReader(fmt.Sprint(v)), 0)
 			}
 		case styx.Tstat:
@@ -106,6 +123,23 @@ func (srv *server) Serve9P(s *styx.Session) {
 						set: func(s string) { v[t.Name] = s },
 					})
 				}
+			case []interface{}:
+				i, err := strconv.Atoi(t.Name)
+				if err != nil {
+					t.Rerror("member of an array must be a number: %s", err)
+					break
+				}
+				if t.Perm.IsDir() {
+					dir := make(map[string]interface{})
+					v[i] = dir
+					t.Rcreate(mkdir(dir))
+				} else {
+					v[i] = new(bytes.Buffer)
+					t.Rcreate(&fakefile{
+						v:   v[i],
+						set: func(s string) { v[i] = s },
+					})
+				}
 			default:
 				t.Rerror("%s is not a directory", t.Path())
 			}
@@ -117,15 +151,24 @@ func (srv *server) Serve9P(s *styx.Session) {
 					break
 				}
 				if parent != nil {
-					delete(parent, path.Base(t.Path()))
-					t.Rremove()
+					if m, ok := parent.(map[string]interface{}); ok {
+						delete(m, path.Base(t.Path()))
+						t.Rremove()
+					} else {
+						t.Rerror("cannot delete array element yet")
+						break
+					}
 				} else {
 					t.Rerror("permission denied")
 				}
 			default:
 				if parent != nil {
-					delete(parent, path.Base(t.Path()))
-					t.Rremove()
+					if m, ok := parent.(map[string]interface{}); ok {
+						delete(m, path.Base(t.Path()))
+						t.Rremove()
+					} else {
+						t.Rerror("cannot delete array element")
+					}
 				} else {
 					t.Rerror("permission denied")
 				}
