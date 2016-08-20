@@ -14,7 +14,7 @@ Start jsonfs on port 5640:
 
 	./jsonfs -a localhost:5640 example.json
 
-Install the `ixpc` client from libixp:
+Install the `ixpc` client from [libixp][ixp]:
 
 	sudo apt-get install libixp-dev
 
@@ -68,3 +68,4 @@ something like this:
 	uploader
 	viewCount
 
+[ixp]: https://bitbucket.org/kmaglione/libixp
