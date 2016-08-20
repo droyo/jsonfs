@@ -56,46 +56,50 @@ You should see output from jsonfs, such as
 When using example.json, the tree hierarchy should look
 something like this:
 
-	$ tree mnt
-	mnt
+	$ tree /mnt/jsonfs
+	/mnt/jsonfs
 	├── apiVersion
 	└── data
 	    ├── items
-	    │   ├── accessControl
-	    │   │   ├── comment
-	    │   │   ├── commentVote
-	    │   │   ├── embed
-	    │   │   ├── list
-	    │   │   ├── rate
-	    │   │   ├── syndicate
-	    │   │   └── videoRespond
-	    │   ├── aspectRatio
-	    │   ├── category
-	    │   ├── commentCount
-	    │   ├── content
-	    │   │   ├── 1
-	    │   │   ├── 5
-	    │   │   └── 6
-	    │   ├── description
-	    │   ├── duration
-	    │   ├── favoriteCount
-	    │   ├── id
-	    │   ├── player
-	    │   │   └── default
-	    │   ├── rating
-	    │   ├── ratingCount
-	    │   ├── status
-	    │   │   ├── reason
-	    │   │   └── value
-	    │   ├── tags
-	    │   ├── thumbnail
-	    │   │   ├── default
-	    │   │   └── hqDefault
-	    │   ├── title
-	    │   ├── updated
-	    │   ├── uploaded
-	    │   ├── uploader
-	    │   └── viewCount
+	    │   └── 0
+	    │       ├── accessControl
+	    │       │   ├── comment
+	    │       │   ├── commentVote
+	    │       │   ├── embed
+	    │       │   ├── list
+	    │       │   ├── rate
+	    │       │   ├── syndicate
+	    │       │   └── videoRespond
+	    │       ├── aspectRatio
+	    │       ├── category
+	    │       ├── commentCount
+	    │       ├── content
+	    │       │   ├── 1
+	    │       │   ├── 5
+	    │       │   └── 6
+	    │       ├── description
+	    │       ├── duration
+	    │       ├── favoriteCount
+	    │       ├── id
+	    │       ├── player
+	    │       │   └── default
+	    │       ├── rating
+	    │       ├── ratingCount
+	    │       ├── status
+	    │       │   ├── reason
+	    │       │   └── value
+	    │       ├── tags
+	    │       │   ├── 0
+	    │       │   ├── 1
+	    │       │   └── 2
+	    │       ├── thumbnail
+	    │       │   ├── default
+	    │       │   └── hqDefault
+	    │       ├── title
+	    │       ├── updated
+	    │       ├── uploaded
+	    │       ├── uploader
+	    │       └── viewCount
 	    ├── itemsPerPage
 	    ├── startIndex
 	    ├── totalItems

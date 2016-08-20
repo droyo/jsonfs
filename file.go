@@ -55,8 +55,11 @@ func (f *fakefile) Close() error {
 }
 
 func (f *fakefile) size() int64 {
-	if d, ok := f.v.(map[string]interface{}); ok {
-		return int64(styxproto.MaxStatLen * len(d))
+	switch v := f.v.(type) {
+	case map[string]interface{}:
+		return int64(styxproto.MaxStatLen * len(v))
+	case []interface{}:
+		return int64(styxproto.MaxStatLen * len(v))
 	}
 	return int64(len(fmt.Sprint(f.v)))
 }
@@ -78,7 +81,10 @@ func (s *stat) IsDir() bool {
 }
 
 func (s *stat) Mode() os.FileMode {
-	if _, ok := s.file.v.(map[string]interface{}); ok {
+	switch s.file.v.(type) {
+	case map[string]interface{}:
+		return os.ModeDir | 0777
+	case []interface{}:
 		return os.ModeDir | 0777
 	}
 	return 0444

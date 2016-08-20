@@ -17,7 +17,9 @@ import (
 )
 
 var (
-	addr = flag.String("a", ":5640", "Port to listen on")
+	addr    = flag.String("a", ":5640", "Port to listen on")
+	debug   = flag.Bool("D", false, "trace 9P messages")
+	verbose = flag.Bool("v", false, "print extra info")
 )
 
 type server struct {
@@ -26,6 +28,8 @@ type server struct {
 
 func main() {
 	flag.Parse()
+	log.SetPrefix("")
+	log.SetFlags(0)
 	if flag.NArg() != 1 {
 		flag.Usage()
 		os.Exit(2)
@@ -40,8 +44,12 @@ func main() {
 		}
 	}
 	var styxServer styx.Server
-	styxServer.ErrorLog = log.New(os.Stderr, "", 0)
-	styxServer.TraceLog = log.New(os.Stderr, "", 0)
+	if *verbose {
+		styxServer.ErrorLog = log.New(os.Stderr, "", 0)
+	}
+	if *debug {
+		styxServer.TraceLog = log.New(os.Stderr, "", 0)
+	}
 	styxServer.Addr = *addr
 	styxServer.Handler = &srv
 
@@ -103,7 +111,6 @@ func (srv *server) Serve9P(s *styx.Session) {
 			case []interface{}:
 				t.Ropen(mkdir(v), os.ModeDir)
 			default:
-				log.Printf("%T not a directory", v)
 				t.Ropen(strings.NewReader(fmt.Sprint(v)), 0)
 			}
 		case styx.Tstat:
