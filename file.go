@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"time"
+
+	"aqwari.net/net/styx/styxproto"
 )
 
 // Turn Go types into files
@@ -52,6 +54,9 @@ func (f *fakefile) Close() error {
 }
 
 func (f *fakefile) size() int64 {
+	if d, ok := f.v.(map[string]interface{}); ok {
+		return int64(styxproto.MaxStatLen * len(d))
+	}
 	return int64(len(fmt.Sprint(f.v)))
 }
 
@@ -98,6 +103,7 @@ func mkdir(m map[string]interface{}) *dir {
 				break
 			}
 		}
+		close(c)
 	}()
 	return &dir{
 		c:    c,
@@ -107,7 +113,7 @@ func mkdir(m map[string]interface{}) *dir {
 
 func (d *dir) Readdir(n int) ([]os.FileInfo, error) {
 	var err error
-	fi := make([]os.FileInfo, 10)
+	fi := make([]os.FileInfo, 0, 10)
 	for i := 0; i < n; i++ {
 		s, ok := <-d.c
 		if !ok {

@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	addr = flag.String("a", ":564", "Port to listen on")
+	addr = flag.String("a", ":5640", "Port to listen on")
 )
 
 type server struct {
@@ -58,12 +58,13 @@ func walkTo(v interface{}, loc string) (map[string]interface{}, interface{}, boo
 			return nil, nil, false
 		}
 		parent = m
-		if _, ok := m[p]; !ok {
+		if child, ok := m[p]; !ok {
 			return nil, nil, false
+		} else {
+			cwd = child
 		}
-		cwd = v
 	}
-	return parent, cwd, parent != nil
+	return parent, cwd, true
 }
 
 func (srv *server) Serve9P(s *styx.Session) {
@@ -115,9 +116,19 @@ func (srv *server) Serve9P(s *styx.Session) {
 					t.Rerror("directory is not empty")
 					break
 				}
-				delete(parent, path.Base(t.Path()))
+				if parent != nil {
+					delete(parent, path.Base(t.Path()))
+					t.Rremove()
+				} else {
+					t.Rerror("permission denied")
+				}
 			default:
-				delete(parent, path.Base(t.Path()))
+				if parent != nil {
+					delete(parent, path.Base(t.Path()))
+					t.Rremove()
+				} else {
+					t.Rerror("permission denied")
+				}
 			}
 		default:
 			t.Rerror("not supported")
