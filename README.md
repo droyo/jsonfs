@@ -1,8 +1,10 @@
 # WORK IN PROGRESS
 
-The main purpose of this program is to test the implementation
-and performance of the [net/styx](https://aqwari.net/net/styx)
-package, which itself is a work in progress.
+This is a demo/toy program to test the implementation and performance of
+the [net/styx](https://aqwari.net/net/styx) package, which itself is a
+work in progress. If you are having trouble getting things to work, ensure
+you have checked out the latest version of the `aqwari.net/net/styx`
+package.
 
 # BUILD
 
@@ -14,17 +16,25 @@ Start jsonfs on port 5640:
 
 	./jsonfs -a localhost:5640 example.json
 
-Install the `ixpc` client from [libixp][ixp]:
+Using plan9port's `9pfuse` utility, mount the fs:
 
-	sudo apt-get install libixp-dev
+	9pfuse localhost:5640 /mnt/jsonfs
 
-Try listing something
+If you have a recent (2.6+) linux kernel, you can
+mount using the kernel's `v9fs` implementation.
+Unfortunately you'll need root access to do so
+without modifying `/etc/fstab`:
 
-	$ export IXP_ADDRESS='tcp!localhost!5640'
-	$ ixpc ls /
-	apiVersion
-	data/
-	$ ixpc read apiVersion
+	sudo modprobe 9p
+	sudo mount -t 9p -o \
+		tcp,name=`whoami`,uname=`whoami`,port=5640 \
+		127.0.0.1 /mnt/jsonfs
+	
+Try looking around
+
+	$ ls /mnt/jsonfs
+	apiVersion data
+	$ cat /mnt/jsonfs/apiVersion
 	2.0
 
 You should see output from jsonfs, such as
@@ -46,26 +56,47 @@ You should see output from jsonfs, such as
 When using example.json, the tree hierarchy should look
 something like this:
 
-	bootes=; ixpc ls data/items
-	accessControl/
-	aspectRatio
-	category
-	commentCount
-	content/
-	description
-	duration
-	favoriteCount
-	id
-	player/
-	rating
-	ratingCount
-	status/
-	tags
-	thumbnail/
-	title
-	updated
-	uploaded
-	uploader
-	viewCount
-
-[ixp]: https://bitbucket.org/kmaglione/libixp
+	$ tree mnt
+	mnt
+	├── apiVersion
+	└── data
+	    ├── items
+	    │   ├── accessControl
+	    │   │   ├── comment
+	    │   │   ├── commentVote
+	    │   │   ├── embed
+	    │   │   ├── list
+	    │   │   ├── rate
+	    │   │   ├── syndicate
+	    │   │   └── videoRespond
+	    │   ├── aspectRatio
+	    │   ├── category
+	    │   ├── commentCount
+	    │   ├── content
+	    │   │   ├── 1
+	    │   │   ├── 5
+	    │   │   └── 6
+	    │   ├── description
+	    │   ├── duration
+	    │   ├── favoriteCount
+	    │   ├── id
+	    │   ├── player
+	    │   │   └── default
+	    │   ├── rating
+	    │   ├── ratingCount
+	    │   ├── status
+	    │   │   ├── reason
+	    │   │   └── value
+	    │   ├── tags
+	    │   ├── thumbnail
+	    │   │   ├── default
+	    │   │   └── hqDefault
+	    │   ├── title
+	    │   ├── updated
+	    │   ├── uploaded
+	    │   ├── uploader
+	    │   └── viewCount
+	    ├── itemsPerPage
+	    ├── startIndex
+	    ├── totalItems
+	    └── updated
