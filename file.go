@@ -8,8 +8,6 @@ import (
 	"os"
 	"strconv"
 	"time"
-
-	"aqwari.net/net/styx/styxproto"
 )
 
 // Turn Go types into files
@@ -55,11 +53,9 @@ func (f *fakefile) Close() error {
 }
 
 func (f *fakefile) size() int64 {
-	switch v := f.v.(type) {
-	case map[string]interface{}:
-		return int64(styxproto.MaxStatLen * len(v))
-	case []interface{}:
-		return int64(styxproto.MaxStatLen * len(v))
+	switch f.v.(type) {
+	case map[string]interface{}, []interface{}:
+		return 0
 	}
 	return int64(len(fmt.Sprint(f.v)))
 }
@@ -83,11 +79,11 @@ func (s *stat) IsDir() bool {
 func (s *stat) Mode() os.FileMode {
 	switch s.file.v.(type) {
 	case map[string]interface{}:
-		return os.ModeDir | 0777
+		return os.ModeDir | 0755
 	case []interface{}:
-		return os.ModeDir | 0777
+		return os.ModeDir | 0755
 	}
-	return 0444
+	return 0644
 }
 
 func (s *stat) Size() int64 {

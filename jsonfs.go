@@ -26,6 +26,12 @@ type server struct {
 	file map[string]interface{}
 }
 
+var logrequests styx.HandlerFunc = func(s *styx.Session) {
+	for s.Next() {
+		log.Printf("%q %T %s", s.User, s.Request(), s.Request().Path())
+	}
+}
+
 func main() {
 	flag.Parse()
 	log.SetPrefix("")
@@ -51,7 +57,7 @@ func main() {
 		styxServer.TraceLog = log.New(os.Stderr, "", 0)
 	}
 	styxServer.Addr = *addr
-	styxServer.Handler = &srv
+	styxServer.Handler = styx.Stack(logrequests, &srv)
 
 	log.Fatal(styxServer.ListenAndServe())
 }
@@ -88,7 +94,8 @@ func walkTo(v interface{}, loc string) (interface{}, interface{}, bool) {
 }
 
 func (srv *server) Serve9P(s *styx.Session) {
-	for t := range s.Requests {
+	for s.Next() {
+		t := s.Request()
 		parent, file, ok := walkTo(srv.file, t.Path())
 		if !ok {
 			t.Rerror("no such file or directory")
@@ -98,11 +105,11 @@ func (srv *server) Serve9P(s *styx.Session) {
 		case styx.Twalk:
 			switch file.(type) {
 			case map[string]interface{}:
-				t.Rwalk(true, os.ModeDir)
+				t.Rwalk(os.ModeDir)
 			case []interface{}:
-				t.Rwalk(true, os.ModeDir)
+				t.Rwalk(os.ModeDir)
 			default:
-				t.Rwalk(true, 0)
+				t.Rwalk(0)
 			}
 		case styx.Topen:
 			switch v := file.(type) {
@@ -160,7 +167,7 @@ func (srv *server) Serve9P(s *styx.Session) {
 				if parent != nil {
 					if m, ok := parent.(map[string]interface{}); ok {
 						delete(m, path.Base(t.Path()))
-						t.Rremove()
+						t.Rremove(nil)
 					} else {
 						t.Rerror("cannot delete array element yet")
 						break
@@ -172,7 +179,7 @@ func (srv *server) Serve9P(s *styx.Session) {
 				if parent != nil {
 					if m, ok := parent.(map[string]interface{}); ok {
 						delete(m, path.Base(t.Path()))
-						t.Rremove()
+						t.Rremove(nil)
 					} else {
 						t.Rerror("cannot delete array element")
 					}
