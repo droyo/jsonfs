@@ -101,41 +101,32 @@ func (srv *server) Serve9P(s *styx.Session) {
 			t.Rerror("no such file or directory")
 			continue
 		}
+		fi := &stat{name: path.Base(t.Path()), file: &fakefile{v: file}}
 		switch t := t.(type) {
 		case styx.Twalk:
-			switch file.(type) {
-			case map[string]interface{}:
-				t.Rwalk(os.ModeDir)
-			case []interface{}:
-				t.Rwalk(os.ModeDir)
-			default:
-				t.Rwalk(0)
-			}
+			t.Rwalk(fi, nil)
 		case styx.Topen:
 			switch v := file.(type) {
-			case map[string]interface{}:
-				t.Ropen(mkdir(v), os.ModeDir)
-			case []interface{}:
-				t.Ropen(mkdir(v), os.ModeDir)
+			case map[string]interface{}, []interface{}:
+				t.Ropen(mkdir(v), nil)
 			default:
-				t.Ropen(strings.NewReader(fmt.Sprint(v)), 0)
+				t.Ropen(strings.NewReader(fmt.Sprint(v)), nil)
 			}
 		case styx.Tstat:
-			fi := &stat{name: path.Base(t.Path()), file: &fakefile{v: file}}
-			t.Rstat(fi)
+			t.Rstat(fi, nil)
 		case styx.Tcreate:
 			switch v := file.(type) {
 			case map[string]interface{}:
-				if t.Perm.IsDir() {
+				if t.Mode.IsDir() {
 					dir := make(map[string]interface{})
 					v[t.Name] = dir
-					t.Rcreate(mkdir(dir))
+					t.Rcreate(mkdir(dir), nil)
 				} else {
 					v[t.Name] = new(bytes.Buffer)
 					t.Rcreate(&fakefile{
 						v:   v[t.Name],
 						set: func(s string) { v[t.Name] = s },
-					})
+					}, nil)
 				}
 			case []interface{}:
 				i, err := strconv.Atoi(t.Name)
@@ -143,16 +134,16 @@ func (srv *server) Serve9P(s *styx.Session) {
 					t.Rerror("member of an array must be a number: %s", err)
 					break
 				}
-				if t.Perm.IsDir() {
+				if t.Mode.IsDir() {
 					dir := make(map[string]interface{})
 					v[i] = dir
-					t.Rcreate(mkdir(dir))
+					t.Rcreate(mkdir(dir), nil)
 				} else {
 					v[i] = new(bytes.Buffer)
 					t.Rcreate(&fakefile{
 						v:   v[i],
 						set: func(s string) { v[i] = s },
-					})
+					}, nil)
 				}
 			default:
 				t.Rerror("%s is not a directory", t.Path())
@@ -187,8 +178,6 @@ func (srv *server) Serve9P(s *styx.Session) {
 					t.Rerror("permission denied")
 				}
 			}
-		default:
-			t.Rerror("not supported")
 		}
 	}
 }
